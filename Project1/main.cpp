@@ -6,7 +6,16 @@
 
 #define WINDOW_TITLE "OpenGL Window"
 
+// Global variables
 
+const float PI = 3.14159265f;
+
+int   gWidth = 800;        // Current client width  (updated in WM_SIZE)
+int   gHeight = 600;        // Current client height (updated in WM_SIZE)
+
+float colourTime = 0.0f;    // Drives the automatic colour change
+
+//--------------------------------------------------------------------
 LRESULT WINAPI WindowProcedure(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg)
@@ -15,8 +24,17 @@ LRESULT WINAPI WindowProcedure(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam
 		PostQuitMessage(0);
 		break;
 
+	case WM_SIZE:
+		gWidth = LOWORD(lParam);
+		gHeight = HIWORD(lParam);
+		if (gHeight == 0) gHeight = 1;
+		break;
+
 	case WM_KEYDOWN:
-		if (wParam == VK_ESCAPE) PostQuitMessage(0);
+		if (wParam == VK_ESCAPE)
+		{
+			PostQuitMessage(0);
+		}
 		break;
 
 	default:
@@ -44,10 +62,10 @@ bool initPixelFormat(HDC hdc)
 	pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
 	pfd.nVersion = 1;
 
-	// choose pixel format returns the number most similar pixel format available
+	// ChoosePixelFormat returns the index of the closest matching pixel format
 	int n = ChoosePixelFormat(hdc, &pfd);
 
-	// set pixel format returns whether it sucessfully set the pixel format
+	// SetPixelFormat returns whether the pixel format was set successfully
 	if (SetPixelFormat(hdc, n, &pfd))
 	{
 		return true;
@@ -59,39 +77,64 @@ bool initPixelFormat(HDC hdc)
 }
 //--------------------------------------------------------------------
 
-void DrawCircle() {
-
-	//DRAW CIRCLE
-	glColor3f(1, 0, 0);
-
-	double radius = 0.5;
-	glBegin(GL_TRIANGLE_FAN);
-	for (int angle = 0;angle < 360; angle++) {
-		float x = radius * cos(angle);
-		float y = radius * sin(angle);
-
-		glVertex2f(x, y);
-	}
-	glEnd();
-}
-
-
-
-void display()
+// Draw a filled 5-point star centred at (cx, cy), pointing up.
+// outerR = tip radius, innerR = inner vertex radius.
+// Centre colour is (cr,cg,cb); tips use (tr,tg,tb) so the star has a gradient.
+void DrawStar(float cx, float cy, float outerR, float innerR, float cr, float cg, float cb, float tr, float tg, float tb)
 {
+	glBegin(GL_TRIANGLE_FAN);
 
+	// Centre of the fan
+	glColor3f(cr, cg, cb);
+	glVertex2f(cx, cy);
 
+	// 10 vertices alternating between tip (outer) and inner points
+	for (int i = 0; i <= 10; i++)
+	{
+		float radius = (i % 2 == 0) ? outerR : innerR;
+		float a = PI / 2.0f + i * (PI / 5.0f);   // start pointing up
 
-	glClear(GL_COLOR_BUFFER_BIT);
+		glColor3f(tr, tg, tb);
+		glVertex2f(cx + radius * cosf(a), cy + radius * sinf(a));
+	}
 
-	DrawCircle();
-		
-
-
+	glEnd();
 }
 //--------------------------------------------------------------------
 
-int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, int nCmdShow) //espect racio
+void update()
+{
+	colourTime += 0.02f;     // Colour cycling speed
+}
+//--------------------------------------------------------------------
+
+void display()
+{
+	// Keep the aspect ratio so the star never looks stretched
+	float aspect = (float)gWidth / (float)gHeight;
+	glViewport(0, 0, gWidth, gHeight);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glOrtho(-aspect, aspect, -1.0, 1.0, -1.0, 1.0);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+
+	// Black background
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	// Three sine waves shifted by 120 degrees give a smooth rainbow cycle
+	float r = 0.5f + 0.5f * sinf(colourTime);
+	float g = 0.5f + 0.5f * sinf(colourTime + 2.0944f);
+	float b = 0.5f + 0.5f * sinf(colourTime + 4.1888f);
+
+	// Star: white centre, tips use the cycling colour
+	DrawStar(0.0f, 0.0f, 0.6f, 0.25f,
+		1.0f, 1.0f, 1.0f, r, g, b);
+}
+//--------------------------------------------------------------------
+
+int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, int nCmdShow)
 {
 	WNDCLASSEX wc;
 	ZeroMemory(&wc, sizeof(WNDCLASSEX));
@@ -105,7 +148,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, int nCmdShow) //espect rac
 	if (!RegisterClassEx(&wc)) return false;
 
 	HWND hWnd = CreateWindow(WINDOW_TITLE, WINDOW_TITLE, WS_OVERLAPPEDWINDOW,
-		CW_USEDEFAULT, CW_USEDEFAULT, 600, 600,
+		CW_USEDEFAULT, CW_USEDEFAULT, 800, 600,
 		NULL, NULL, wc.hInstance, NULL);
 
 	//--------------------------------
@@ -114,13 +157,13 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, int nCmdShow) //espect rac
 
 	HDC hdc = GetDC(hWnd);
 
-	//	initialize pixel format for the window
+	// Initialize pixel format for the window
 	initPixelFormat(hdc);
 
-	//	get an openGL context
+	// Get an OpenGL context
 	HGLRC hglrc = wglCreateContext(hdc);
 
-	//	make context current
+	// Make the context current
 	if (!wglMakeCurrent(hdc, hglrc)) return false;
 
 	//--------------------------------
@@ -142,9 +185,11 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, int nCmdShow) //espect rac
 			DispatchMessage(&msg);
 		}
 
-		display();
+		update();      // Advance the colour
+		display();     // Draw the scene
 
 		SwapBuffers(hdc);
+		Sleep(16);     // About 60 frames per second
 	}
 
 	UnregisterClass(WINDOW_TITLE, wc.hInstance);
