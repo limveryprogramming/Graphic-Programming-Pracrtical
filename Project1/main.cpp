@@ -64,6 +64,7 @@ Colour GREEN = { 0,1,0 };
 Colour BLUE = { 0,0,1 };
 Colour BLACK = { 0,0,0 };
 Colour WHITE = { 1,1,1 };
+Colour YELLOW = { 1,1,0 };
 
 
 void DrawCircle(float r,Colour c) {
@@ -123,14 +124,15 @@ void display()
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	//draw function
-	DrawRectangle(-1,-1,2,2,BLUE);
-	DrawTriangle(-1,-1,0,0,-1,0,RED);
-	DrawTriangle(-1, -1, 0, 0, 0, -1, WHITE);
-	DrawLine(0,-1,0,1,BLACK);
-	DrawLine(-1, -1, 1, 1, BLACK);
-	DrawLine(1, -1, -1, 1, BLACK);
-	DrawCircle(0.2,GREEN);
-		
+	DrawRectangle(-1,-1,2,2,WHITE);
+
+	DrawCircle(0.8,YELLOW);
+
+	//FACE
+	//EYES
+	DrawLine(-0.6, 0.4, -0.2, 0.4 , BLACK);
+	DrawLine(0.6, 0.4, 0.2, 0.4, BLACK);
+	DrawLine(-0.6, -0.4, 0.6, -0.4, BLACK);
 
 
 }
