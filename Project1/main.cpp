@@ -58,13 +58,20 @@ bool initPixelFormat(HDC hdc)
 	}
 }
 //--------------------------------------------------------------------
+struct Colour { float r, g, b; };
+Colour RED = { 1,0,0 };
+Colour GREEN = { 0,1,0 };
+Colour BLUE = { 0,0,1 };
+Colour BLACK = { 0,0,0 };
+Colour WHITE = { 1,1,1 };
 
-void DrawCircle() {
+
+void DrawCircle(float r,Colour c) {
 
 	//DRAW CIRCLE
-	glColor3f(1, 0, 0);
+	glColor3f(c.r, c.g, c.b);
 
-	double radius = 0.5;
+	double radius = r;
 	glBegin(GL_TRIANGLE_FAN);
 
 	for (int angle = 0;angle < 360; angle++) {
@@ -77,29 +84,52 @@ void DrawCircle() {
 	glEnd();
 }
 
-void DrawBackGround(){
+void DrawRectangle(float x, float y, float w, float h, Colour c) {
 
-	glColor3f(1, 1, 1);
-	glBegin(GL_QUADS);//draw rectangle
-
-	glVertex2f(-1, 1);	//1. top left
-	glVertex2f(-1, -1);	//2. bottom left
-	glVertex2f(1, -1);	//3. bottom right
-	glVertex2f(1, 1);	//4. top right
-
+	glColor3f(c.r, c.g, c.b);
+	glBegin(GL_QUADS);
+	
+	glVertex2f(x, y + h);   // top left
+	glVertex2f(x, y);       // bottom left
+	glVertex2f(x + w, y);       // bottom right
+	glVertex2f(x + w, y + h);   // top right
 
 	glEnd();
 }
 
 
+void DrawTriangle(float x1, float y1,float x2, float y2,float x3, float y3,Colour c) {
+	glColor3f(c.r, c.g, c.b);
+	glBegin(GL_TRIANGLES);
+
+	glVertex2f(x1, y1);
+	glVertex2f(x2, y2);
+	glVertex2f(x3, y3);
+	glEnd();
+}
+
+void DrawLine(float x1, float y1, float x2, float y2, Colour c) {
+	glColor3f(c.r, c.g, c.b);
+	glLineWidth(5);
+	glBegin(GL_LINES);
+
+	glVertex2f(x1, y1);
+	glVertex2f(x2, y2);
+	glEnd();
+}
 void display()
 {
 	
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	//draw function
-	DrawBackGround();
-	DrawCircle();
+	DrawRectangle(-1,-1,2,2,BLUE);
+	DrawTriangle(-1,-1,0,0,-1,0,RED);
+	DrawTriangle(-1, -1, 0, 0, 0, -1, WHITE);
+	DrawLine(0,-1,0,1,BLACK);
+	DrawLine(-1, -1, 1, 1, BLACK);
+	DrawLine(1, -1, -1, 1, BLACK);
+	DrawCircle(0.2,GREEN);
 		
 
 
