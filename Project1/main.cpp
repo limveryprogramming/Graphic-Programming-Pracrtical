@@ -58,36 +58,79 @@ bool initPixelFormat(HDC hdc)
 	}
 }
 //--------------------------------------------------------------------
+void Draw_GL_LINES() {
 
-void display()
-{
-	
-	//--------------------------------
-	//	OpenGL drawing
-	//--------------------------------
-
-	glClear(GL_COLOR_BUFFER_BIT);
 
 	glColor3f(1.0f, 0.0f, 0.0f);
-	glLineWidth(5.0f);//try 1,3,10
+	glLineWidth(5.0f);
 	glPointSize(10.0f);
-	glBegin(GL_POINTS);
+	glBegin(GL_LINES);
 
-
+	//point 1
 	glColor3f(1.0f, 0.0f, 0.0f);
 	glVertex2f(-0.5f, -0.5f);
 
+	//point2
 	glColor3f(0.0f, 1.0f, 0.0f);
 	glVertex2f(0.5f, -0.5f);
 
-	glColor3f(0.0f, 0.0f, 1.0f);
-	glVertex2f(0.0f, 0.5f);
+	glEnd();
+}
+
+
+void Draw_GL_LINE_LOOP() {
 	
 
-	//--------------------------------
-	//	End of OpenGL drawing
-	//--------------------------------
+	glColor3f(1.0f, 0.0f, 0.0f);
+	glLineWidth(5.0f);
+	glPointSize(10.0f);
+	glBegin(GL_LINE_LOOP);
+
+	//point 1
+	glColor3f(1.0f, 0.0f, 0.0f);
+	glVertex2f(-0.5f, -0.5f);
+
+	//point2
+	glColor3f(0.0f, 1.0f, 0.0f);
+	glVertex2f(0.5f, -0.5f);
+
+	//point3
+	glColor3f(0.0f, 0.0f, 1.0f);
+	glVertex2f(0.0f, 0.5f);
+
 	glEnd();
+}
+
+void Draw_GL_LINE_STRIP() {
+	glColor3f(1.0f, 0.0f, 0.0f);
+	glLineWidth(5.0f);
+	glPointSize(10.0f);
+	glBegin(GL_LINE_STRIP);
+
+	//point 1
+	glColor3f(1.0f, 0.0f, 0.0f);
+	glVertex2f(-0.5f, -0.5f);
+
+	//point2
+	glColor3f(0.0f, 1.0f, 0.0f);
+	glVertex2f(0.5f, -0.5f);
+
+	//point3
+	glColor3f(0.0f, 0.0f, 1.0f);
+	glVertex2f(0.0f, 0.5f);
+
+	glEnd();
+}
+
+//--------------------------------------------------------------------
+void display()
+{
+	
+
+	glClear(GL_COLOR_BUFFER_BIT);
+	//Draw_GL_LINES();
+	//Draw_GL_LINE_LOOP();
+	Draw_GL_LINE_STRIP();
 
 }
 //--------------------------------------------------------------------
