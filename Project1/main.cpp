@@ -66,24 +66,39 @@ void DrawCircle() {
 
 	double radius = 0.5;
 	glBegin(GL_TRIANGLE_FAN);
+
 	for (int angle = 0;angle < 360; angle++) {
 		float x = radius * cos(angle);
 		float y = radius * sin(angle);
 
 		glVertex2f(x, y);
 	}
+
+	glEnd();
+}
+
+void DrawBackGround(){
+
+	glColor3f(1, 1, 1);
+	glBegin(GL_QUADS);//draw rectangle
+
+	glVertex2f(-1, 1);	//1. top left
+	glVertex2f(-1, -1);	//2. bottom left
+	glVertex2f(1, -1);	//3. bottom right
+	glVertex2f(1, 1);	//4. top right
+
+
 	glEnd();
 }
 
 
-
 void display()
 {
-
-
-
+	
 	glClear(GL_COLOR_BUFFER_BIT);
 
+	//draw function
+	DrawBackGround();
 	DrawCircle();
 		
 
@@ -105,7 +120,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, int nCmdShow) //espect rac
 	if (!RegisterClassEx(&wc)) return false;
 
 	HWND hWnd = CreateWindow(WINDOW_TITLE, WINDOW_TITLE, WS_OVERLAPPEDWINDOW,
-		CW_USEDEFAULT, CW_USEDEFAULT, 600, 600,
+		CW_USEDEFAULT, CW_USEDEFAULT, 800, 600,
 		NULL, NULL, wc.hInstance, NULL);
 
 	//--------------------------------
