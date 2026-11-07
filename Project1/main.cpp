@@ -7,6 +7,24 @@
 #define WINDOW_TITLE "OpenGL Window"
 
 
+// Global variables: object position and colour
+
+struct Colour { float r, g, b; };
+
+const Colour RED = { 1, 0, 0 };
+const Colour GREEN = { 0, 1, 0 };
+const Colour BLUE = { 0, 0, 1 };
+const Colour WHITE = { 1, 1, 1 };
+
+float objX = 0.0f;          // Object x position
+float objY = 0.0f;          // Object y position
+Colour objColour = RED;     // Current object colour (starts as a red dot)
+
+const float STEP = 0.05f;   // Distance moved per key press
+
+
+
+//--------------------------------------------------------------------
 LRESULT WINAPI WindowProcedure(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg)
@@ -16,7 +34,50 @@ LRESULT WINAPI WindowProcedure(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam
 		break;
 
 	case WM_KEYDOWN:
-		if (wParam == VK_ESCAPE) PostQuitMessage(0);
+		if (wParam == VK_ESCAPE)
+		{
+			PostQuitMessage(0);
+		}
+		else if (wParam == VK_LEFT)         // a. Move left
+		{
+			objX -= STEP;
+		}
+		else if (wParam == VK_RIGHT)        // b. Move right
+		{
+			objX += STEP;
+		}
+		else if (wParam == VK_UP)           // c. Move up
+		{
+			objY += STEP;
+		}
+		else if (wParam == VK_DOWN)         // d. Move down
+		{
+			objY -= STEP;
+		}
+		else if (wParam == 'R')             // e. Change colour to pure red
+		{
+			objColour = RED;
+		}
+		else if (wParam == 'G')             // f. Change colour to pure green
+		{
+			objColour = GREEN;
+		}
+		else if (wParam == 'B')             // g. Change colour to pure blue
+		{
+			objColour = BLUE;
+		}
+		else if (wParam == VK_SPACE)        // h. Reset: white colour and centre position
+		{
+			objColour = WHITE;
+			objX = 0.0f;
+			objY = 0.0f;
+		}
+
+		// Keep the object inside the window (-1 to 1)
+		if (objX > 1.0f)  objX = 1.0f;
+		if (objX < -1.0f) objX = -1.0f;
+		if (objY > 1.0f)  objY = 1.0f;
+		if (objY < -1.0f) objY = -1.0f;
 		break;
 
 	default:
@@ -44,10 +105,10 @@ bool initPixelFormat(HDC hdc)
 	pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
 	pfd.nVersion = 1;
 
-	// choose pixel format returns the number most similar pixel format available
+	// ChoosePixelFormat returns the index of the closest matching pixel format
 	int n = ChoosePixelFormat(hdc, &pfd);
 
-	// set pixel format returns whether it sucessfully set the pixel format
+	// SetPixelFormat returns whether the pixel format was set successfully
 	if (SetPixelFormat(hdc, n, &pfd))
 	{
 		return true;
@@ -58,87 +119,23 @@ bool initPixelFormat(HDC hdc)
 	}
 }
 //--------------------------------------------------------------------
-struct Colour { float r, g, b; };
-Colour RED = { 1,0,0 };
-Colour GREEN = { 0,1,0 };
-Colour BLUE = { 0,0,1 };
-Colour BLACK = { 0,0,0 };
-Colour WHITE = { 1,1,1 };
-Colour YELLOW = { 1,1,0 };
 
-
-void DrawCircle(float r,Colour c) {
-
-	//DRAW CIRCLE
-	glColor3f(c.r, c.g, c.b);
-
-	double radius = r;
-	glBegin(GL_TRIANGLE_FAN);
-
-	for (int angle = 0;angle < 360; angle++) {
-		float x = radius * cos(angle);
-		float y = radius * sin(angle);
-
-		glVertex2f(x, y);
-	}
-
-	glEnd();
-}
-
-void DrawRectangle(float x, float y, float w, float h, Colour c) {
-
-	glColor3f(c.r, c.g, c.b);
-	glBegin(GL_QUADS);
-	
-	glVertex2f(x, y + h);   // top left
-	glVertex2f(x, y);       // bottom left
-	glVertex2f(x + w, y);       // bottom right
-	glVertex2f(x + w, y + h);   // top right
-
-	glEnd();
-}
-
-
-void DrawTriangle(float x1, float y1,float x2, float y2,float x3, float y3,Colour c) {
-	glColor3f(c.r, c.g, c.b);
-	glBegin(GL_TRIANGLES);
-
-	glVertex2f(x1, y1);
-	glVertex2f(x2, y2);
-	glVertex2f(x3, y3);
-	glEnd();
-}
-
-void DrawLine(float x1, float y1, float x2, float y2, Colour c) {
-	glColor3f(c.r, c.g, c.b);
-	glLineWidth(5);
-	glBegin(GL_LINES);
-
-	glVertex2f(x1, y1);
-	glVertex2f(x2, y2);
-	glEnd();
-}
 void display()
 {
-	
+	// Black background
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	//draw function
-	DrawRectangle(-1,-1,2,2,WHITE);
-
-	DrawCircle(0.8,YELLOW);
-
-	//FACE
-	//EYES
-	DrawLine(-0.6, 0.4, -0.2, 0.4 , BLACK);
-	DrawLine(0.6, 0.4, 0.2, 0.4, BLACK);
-	DrawLine(-0.6, -0.4, 0.6, -0.4, BLACK);
-
-
+	// Draw the object (a single point)
+	glPointSize(20.0f);
+	glColor3f(objColour.r, objColour.g, objColour.b);
+	glBegin(GL_POINTS);
+	glVertex2f(objX, objY);
+	glEnd();
 }
 //--------------------------------------------------------------------
 
-int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, int nCmdShow) //espect racio
+int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, int nCmdShow)
 {
 	WNDCLASSEX wc;
 	ZeroMemory(&wc, sizeof(WNDCLASSEX));
@@ -161,13 +158,13 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, int nCmdShow) //espect rac
 
 	HDC hdc = GetDC(hWnd);
 
-	//	initialize pixel format for the window
+	// Initialize pixel format for the window
 	initPixelFormat(hdc);
 
-	//	get an openGL context
+	// Get an OpenGL context
 	HGLRC hglrc = wglCreateContext(hdc);
 
-	//	make context current
+	// Make the context current
 	if (!wglMakeCurrent(hdc, hglrc)) return false;
 
 	//--------------------------------
