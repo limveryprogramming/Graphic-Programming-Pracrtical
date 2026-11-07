@@ -58,9 +58,21 @@ bool initPixelFormat(HDC hdc)
 	}
 }
 //--------------------------------------------------------------------
-void drawTriangle() {
-	glColor3f(1.0f, 1.0f, 0.0f);
-	glBegin(GL_TRIANGLES);
+
+void display()
+{
+	
+	//--------------------------------
+	//	OpenGL drawing
+	//--------------------------------
+
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	glColor3f(1.0f, 0.0f, 0.0f);
+	glLineWidth(5.0f);//try 1,3,10
+	glPointSize(10.0f);
+	glBegin(GL_POINTS);
+
 
 	glColor3f(1.0f, 0.0f, 0.0f);
 	glVertex2f(-0.5f, -0.5f);
@@ -70,70 +82,12 @@ void drawTriangle() {
 
 	glColor3f(0.0f, 0.0f, 1.0f);
 	glVertex2f(0.0f, 0.5f);
-	glEnd();
-}
-
-void drawQuad() {
-	glColor3f(1.0f, 0.8f, 0.0f);
-	glBegin(GL_QUADS);
-
-	glVertex2f(-0.8f, 0.2f);
-
-	glVertex2f(-0.4f, 0.2f);
-
-	glVertex2f(-0.4f, -0.2f);
-	glVertex2f(-0.8f, -0.2f);
-	glEnd();
-}
-
-void display()
-{
-	
-	//--------------------------------
-	//	OpenGL drawing
-	//--------------------------------
-
-	//glClear(GL_COLOR_BUFFER_BIT);
-
-	//glColor3f(1.0f, 0.0f, 0.0f);
-	//glLineWidth(5.0f);//try 1,3,10
-	//glPointSize(10.0f);
-	//glBegin(GL_POINTS);
-
-
-	//glColor3f(1.0f, 0.0f, 0.0f);
-	//glVertex2f(-0.5f, -0.5f);
-
-	//glColor3f(0.0f, 1.0f, 0.0f);
-	//glVertex2f(0.5f, -0.5f);
-
-	//glColor3f(0.0f, 0.0f, 1.0f);
-	//glVertex2f(0.0f, 0.5f);
-
-	//DRAW CIRCLE
-	//glClear(GL_COLOR_BUFFER_BIT);
-	//glColor3f(1, 0, 0);
-
-	//double radius = 0.5;
-	//glBegin(GL_TRIANGLE_FAN);
-	//for (int angle = 0;angle < 360; angle++) {
-	//	float x = radius * cos(angle);
-	//	float y = radius * sin(angle);
-
-	//	glVertex2f(x, y);
-	//}
 	
 
 	//--------------------------------
 	//	End of OpenGL drawing
 	//--------------------------------
-	//glEnd();
-	glClear(GL_COLOR_BUFFER_BIT);
-	glLoadIdentity();
-	glTranslatef(0.001f, 0.0f, 0.0f);
-	drawTriangle();
-	drawQuad();
-		
+	glEnd();
 
 }
 //--------------------------------------------------------------------
