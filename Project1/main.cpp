@@ -58,79 +58,29 @@ bool initPixelFormat(HDC hdc)
 	}
 }
 //--------------------------------------------------------------------
-void Draw_GL_LINES() {
 
+void DrawCircle() {
 
-	glColor3f(1.0f, 0.0f, 0.0f);
-	glLineWidth(5.0f);
-	glPointSize(10.0f);
-	glBegin(GL_LINES);
+	//DRAW CIRCLE
+	glColor3f(1, 0, 0);
 
-	//point 1
-	glColor3f(1.0f, 0.0f, 0.0f);
-	glVertex2f(-0.5f, -0.5f);
+	double radius = 0.5;
+	glBegin(GL_TRIANGLE_FAN);
+	for (int angle = 0;angle < 360; angle++) {
+		float x = radius * cos(angle);
+		float y = radius * sin(angle);
 
-	//point2
-	glColor3f(0.0f, 1.0f, 0.0f);
-	glVertex2f(0.5f, -0.5f);
-
+		glVertex2f(x, y);
+	}
 	glEnd();
 }
 
 
-void Draw_GL_LINE_LOOP() {
-	
 
-	glColor3f(1.0f, 0.0f, 0.0f);
-	glLineWidth(5.0f);
-	glPointSize(10.0f);
-	glBegin(GL_LINE_LOOP);
-
-	//point 1
-	glColor3f(1.0f, 0.0f, 0.0f);
-	glVertex2f(-0.5f, -0.5f);
-
-	//point2
-	glColor3f(0.0f, 1.0f, 0.0f);
-	glVertex2f(0.5f, -0.5f);
-
-	//point3
-	glColor3f(0.0f, 0.0f, 1.0f);
-	glVertex2f(0.0f, 0.5f);
-
-	glEnd();
-}
-
-void Draw_GL_LINE_STRIP() {
-	glColor3f(1.0f, 0.0f, 0.0f);
-	glLineWidth(5.0f);
-	glPointSize(10.0f);
-	glBegin(GL_LINE_STRIP);
-
-	//point 1
-	glColor3f(1.0f, 0.0f, 0.0f);
-	glVertex2f(-0.5f, -0.5f);
-
-	//point2
-	glColor3f(0.0f, 1.0f, 0.0f);
-	glVertex2f(0.5f, -0.5f);
-
-	//point3
-	glColor3f(0.0f, 0.0f, 1.0f);
-	glVertex2f(0.0f, 0.5f);
-
-	glEnd();
-}
-
-//--------------------------------------------------------------------
 void display()
 {
-	
 
-	glClear(GL_COLOR_BUFFER_BIT);
-	//Draw_GL_LINES();
-	//Draw_GL_LINE_LOOP();
-	Draw_GL_LINE_STRIP();
+	DrawCircle();
 
 }
 //--------------------------------------------------------------------
