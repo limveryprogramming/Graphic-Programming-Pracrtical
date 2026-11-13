@@ -40,45 +40,15 @@ LRESULT WINAPI WindowProcedure(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam
 		}
 		else if (wParam == VK_LEFT)         // a. Move left
 		{
-			objX -= STEP;
+			//spin
+			//angle = angle + speed * direction
 		}
 		else if (wParam == VK_RIGHT)        // b. Move right
 		{
-			objX += STEP;
-		}
-		else if (wParam == VK_UP)           // c. Move up
-		{
-			objY += STEP;
-		}
-		else if (wParam == VK_DOWN)         // d. Move down
-		{
-			objY -= STEP;
-		}
-		else if (wParam == 'R')             // e. Change colour to pure red
-		{
-			objColour = RED;
-		}
-		else if (wParam == 'G')             // f. Change colour to pure green
-		{
-			objColour = GREEN;
-		}
-		else if (wParam == 'B')             // g. Change colour to pure blue
-		{
-			objColour = BLUE;
-		}
-		else if (wParam == VK_SPACE)        // h. Reset: white colour and centre position
-		{
-			objColour = WHITE;
-			objX = 0.0f;
-			objY = 0.0f;
+			//freeze spin
+		
 		}
 
-		// Keep the object inside the window (-1 to 1)
-		if (objX > 1.0f)  objX = 1.0f;
-		if (objX < -1.0f) objX = -1.0f;
-		if (objY > 1.0f)  objY = 1.0f;
-		if (objY < -1.0f) objY = -1.0f;
-		break;
 
 	default:
 		break;
