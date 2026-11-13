@@ -20,8 +20,10 @@ float objX = 0.0f;          // Object x position
 float objY = 0.0f;          // Object y position
 Colour objColour = RED;     // Current object colour (starts as a red dot)
 
-const float STEP = 0.05f;   // Distance moved per key press
-
+bool depthTest = false;
+bool clearDepth = true;
+bool culling = false;
+float angle = 0.0f;
 
 
 //--------------------------------------------------------------------
@@ -38,18 +40,10 @@ LRESULT WINAPI WindowProcedure(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam
 		{
 			PostQuitMessage(0);
 		}
-		else if (wParam == VK_LEFT)         // a. Move left
-		{
-			//spin
-			//angle = angle + speed * direction
-		}
-		else if (wParam == VK_RIGHT)        // b. Move right
-		{
-			//freeze spin
-		
-		}
-
-
+		if (wParam == 'D') depthTest= !depthTest;
+		if (wParam == 'C') clearDepth = !clearDepth;
+		if (wParam == 'K') culling = !culling;
+		break;
 	default:
 		break;
 	}
@@ -90,18 +84,87 @@ bool initPixelFormat(HDC hdc)
 }
 //--------------------------------------------------------------------
 
-void display()
-{
+
+void Draw3DCube() {
+	glBegin(GL_QUADS);
+
 	// Black background
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	// Draw the object (a single point)
-	glPointSize(20.0f);
-	glColor3f(objColour.r, objColour.g, objColour.b);
-	glBegin(GL_POINTS);
-	glVertex2f(objX, objY);
+	//front
+	glColor3f(1, 0, 0);
+	glNormal3f(0, 0, 1);
+	glVertex3f(0, 0, 1);
+	glVertex3f(1, 0, 1);
+	glVertex3f(1, 1, 1);
+	glVertex3f(0, 1, 1);
+
+	//back
+	glColor3f(0, 1, 0);
+	glNormal3f(0, 0, -1);
+	glVertex3f(1, 0, 0);
+	glVertex3f(0, 0, 0);
+	glVertex3f(0, 1, 0);
+	glVertex3f(1, 1, 0);
+
+	//left face
+	glColor3f(0, 0, 1);
+	glNormal3f(-1, 0, 0);
+	glVertex3f(0, 0, 0);
+	glVertex3f(0, 0, 1);
+	glVertex3f(0, 1, 1);
+	glVertex3f(0, 1, 0);
+
+	//right face
+	glColor3f(1, 1, 0);
+	glNormal3f(1, 0, 0);
+	glVertex3f(1, 0, 1);
+	glVertex3f(1, 0, 0);
+	glVertex3f(1, 1, 0);
+	glVertex3f(1, 1, 1);
+
+	//top
+	glColor3f(0, 1, 1);
+	glNormal3f(0, 1, 0);
+	glVertex3f(0, 1, 1);
+	glVertex3f(1, 1, 1);
+	glVertex3f(1, 1, 0);
+	glVertex3f(0, 1, 0);
+
+	//down
+	glColor3f(1, 0, 1);
+	glNormal3f(0, -1, 0);
+	glVertex3f(0, 0, 0);
+	glVertex3f(1, 0, 0);
+	glVertex3f(1, 0, 1);
+	glVertex3f(0, 0, 1);
+
 	glEnd();
+}
+
+void display()
+{
+	glClearColor(0.007, 0.00, 0.10f, 1.0f);
+
+	// clear the colour buffer ANO the depth buffer 
+	if (clearDepth) glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	else			glClear(GL_COLOR_BUFFER_BIT);
+
+	//glEnable(CL CEPTH TEST). In a normal progran you call it ONCE
+	if (depthTest) glEnable(GL_DEPTH_TEST); 
+	else glDisable(GL_DEPTH_TEST);
+
+	// EXTRA: ds net draw the faces that peint anay fren us (the back faces) 
+	if (culling) glEnable(GL_CULL_FACE); 
+	else glDisable (GL_CULL_FACE);
+
+	glLoadIdentity(); 
+	angle = angle  + 0.034;
+	glRotatef(angle, 1.0f, 1.0f, 0.0f); 
+
+	// spin the cube so we can see all its sides
+	Draw3DCube();
 }
 //--------------------------------------------------------------------
 
