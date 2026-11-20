@@ -1,34 +1,23 @@
 #include <Windows.h>
-#include <gl/GL.h>
 #include <math.h>
-#include <stdio.h>
+#include <gl/GL.h>
+#include <gl/GLU.h>
 
-#pragma comment (lib, "OpenGL32.lib")
+#pragma comment (lib, "OpenGL32.lib") //Get the OpenGL library
+#pragma comment (lib, "GLU32.lib") // link GLU32.lib
 
 #define WINDOW_TITLE "OpenGL Window"
 
-const float PI = 3.14159265f;
+//Create a quadric object
+GLUquadricObj* var = NULL;
 
-// ------------------------------------------------------------------
-// Windmill controls
-//   Left  arrow / A : spin anti-clockwise
-//   Right arrow / D : spin clockwise
-//   Up    arrow / W : accelerate
-//   Down  arrow / S : decelerate
-//   Space           : stop
-//   Esc             : quit
-// ------------------------------------------------------------------
+//Global variable
+bool lineStyle = false;
+int slices = 20, stacks = 20;
+float angle = 0.0f;
 
-float bladeAngle = 0.0f;     // current rotation of the blades (degrees)
-float speed = 90.0f;         // spinning speed (degrees per second)
-int   direction = -1;        // -1 = clockwise, +1 = anti-clockwise
-const float SPEED_STEP = 30.0f;
-const float MAX_SPEED = 720.0f;
+int topSteps = 6;
 
-LARGE_INTEGER freq, lastTime;   // for frame-rate independent spinning
-
-
-//--------------------------------------------------------------------
 LRESULT WINAPI WindowProcedure(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg)
@@ -39,21 +28,11 @@ LRESULT WINAPI WindowProcedure(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam
 
 	case WM_KEYDOWN:
 		if (wParam == VK_ESCAPE) PostQuitMessage(0);
-
-		if (wParam == VK_LEFT || wParam == 'A') direction = 1;    // anti-clockwise
-		if (wParam == VK_RIGHT || wParam == 'D') direction = -1;  // clockwise
-
-		if (wParam == VK_UP || wParam == 'W')                     // accelerate
-		{
-			speed += SPEED_STEP;
-			if (speed > MAX_SPEED) speed = MAX_SPEED;
-		}
-		if (wParam == VK_DOWN || wParam == 'S')                   // decelerate
-		{
-			speed -= SPEED_STEP;
-			if (speed < 0.0f) speed = 0.0f;
-		}
-		if (wParam == VK_SPACE) speed = 0.0f;                     // stop
+		else if (wParam == 'L') lineStyle = !lineStyle;
+		//else if (wParam == VK_UP) if (slices < 60) { slices = slices + 2; stacks = stacks + 2; }
+		//else if (wParam == VK_DOWN) if (slices > 4) { slices = slices - 2; stacks = stacks - 2; }
+		else if (wParam == VK_UP && topSteps < 11) { topSteps = topSteps + 1; }
+		else if (wParam == VK_DOWN && topSteps > 0) { topSteps = topSteps - 1; }
 		break;
 
 	default:
@@ -62,18 +41,23 @@ LRESULT WINAPI WindowProcedure(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam
 
 	return DefWindowProc(hWnd, msg, wParam, lParam);
 }
-//--------------------------------------------------------------------
-
+//-------------------------------------------------------------------- Reusable code
+//Describe the frame buffer
 bool initPixelFormat(HDC hdc)
 {
 	PIXELFORMATDESCRIPTOR pfd;
 	ZeroMemory(&pfd, sizeof(PIXELFORMATDESCRIPTOR));
 
+	//32-bit RGB-A colour
 	pfd.cAlphaBits = 8;
 	pfd.cColorBits = 32;
+
+	//Depth
 	pfd.cDepthBits = 24;
+
 	pfd.cStencilBits = 0;
 
+	//Double buffer
 	pfd.dwFlags = PFD_DOUBLEBUFFER | PFD_SUPPORT_OPENGL | PFD_DRAW_TO_WINDOW;
 
 	pfd.iLayerType = PFD_MAIN_PLANE;
@@ -81,163 +65,52 @@ bool initPixelFormat(HDC hdc)
 	pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
 	pfd.nVersion = 1;
 
+	// choose pixel format returns the number most similar pixel format available
+	// Find the closest match, and get the pixel format
 	int n = ChoosePixelFormat(hdc, &pfd);
-	return SetPixelFormat(hdc, n, &pfd) ? true : false;
-}
-//--------------------------------------------------------------------
-//  Basic shape helpers
-//--------------------------------------------------------------------
 
-void drawCircle(float cx, float cy, float r, int segments = 40)
-{
-	glBegin(GL_TRIANGLE_FAN);
-	glVertex2f(cx, cy);
-	for (int i = 0; i <= segments; i++)
+	// set pixel format returns whether it sucessfully set the pixel format
+	if (SetPixelFormat(hdc, n, &pfd))
 	{
-		float a = 2.0f * PI * i / segments;
-		glVertex2f(cx + r * cosf(a), cy + r * sinf(a));
+		return true;
 	}
-	glEnd();
-}
-
-void drawRect(float x1, float y1, float x2, float y2)
-{
-	glBegin(GL_QUADS);
-	glVertex2f(x1, y1);
-	glVertex2f(x2, y1);
-	glVertex2f(x2, y2);
-	glVertex2f(x1, y2);
-	glEnd();
-}
-
-//--------------------------------------------------------------------
-//  Background
-//--------------------------------------------------------------------
-
-void drawBackground()
-{
-	// sky
-	glColor3f(0.53f, 0.81f, 0.92f);
-	drawRect(-1.4f, -0.4f, 1.4f, 1.0f);
-
-	// sun
-	glColor3f(1.0f, 0.9f, 0.0f);
-	drawCircle(1.0f, 0.75f, 0.12f);
-
-	// clouds
-	glColor3f(1.0f, 1.0f, 1.0f);
-	drawCircle(-0.95f, 0.70f, 0.08f);
-	drawCircle(-0.85f, 0.73f, 0.10f);
-	drawCircle(-0.75f, 0.70f, 0.08f);
-
-	drawCircle(0.45f, 0.80f, 0.07f);
-	drawCircle(0.54f, 0.83f, 0.09f);
-	drawCircle(0.63f, 0.80f, 0.07f);
-
-	// grass
-	glColor3f(0.3f, 0.7f, 0.2f);
-	drawRect(-1.4f, -1.0f, 1.4f, -0.4f);
-
-	// path to the door
-	glColor3f(0.8f, 0.7f, 0.5f);
-	glBegin(GL_QUADS);
-	glVertex2f(-0.05f, -0.40f);
-	glVertex2f(0.05f, -0.40f);
-	glVertex2f(0.20f, -1.00f);
-	glVertex2f(-0.20f, -1.00f);
-	glEnd();
-}
-
-//--------------------------------------------------------------------
-//  Windmill body (does not spin)
-//--------------------------------------------------------------------
-
-void drawTower()
-{
-	// tower (trapezium)
-	glColor3f(0.6f, 0.4f, 0.2f);
-	glBegin(GL_QUADS);
-	glVertex2f(-0.25f, -0.40f);
-	glVertex2f(0.25f, -0.40f);
-	glVertex2f(0.15f, 0.30f);
-	glVertex2f(-0.15f, 0.30f);
-	glEnd();
-
-	// roof (triangle)
-	glColor3f(0.7f, 0.1f, 0.1f);
-	glBegin(GL_TRIANGLES);
-	glVertex2f(-0.20f, 0.30f);
-	glVertex2f(0.20f, 0.30f);
-	glVertex2f(0.00f, 0.50f);
-	glEnd();
-
-	// door
-	glColor3f(0.35f, 0.2f, 0.1f);
-	drawRect(-0.06f, -0.40f, 0.06f, -0.20f);
-}
-
-//--------------------------------------------------------------------
-//  Blades (these spin)
-//--------------------------------------------------------------------
-
-void drawOneBlade()
-{
-	// one plain white blade
-	glColor3f(1.0f, 1.0f, 1.0f);
-	drawRect(-0.04f, 0.0f, 0.04f, 0.5f);
-}
-
-void drawBlades()
-{
-	glPushMatrix();
-	glTranslatef(0.0f, 0.38f, 0.0f);        // move to the hub
-	glRotatef(bladeAngle, 0.0f, 0.0f, 1.0f); // spin around the hub
-
-	for (int i = 0; i < 4; i++)
+	else
 	{
-		glPushMatrix();
-		glRotatef(i * 90.0f, 0.0f, 0.0f, 1.0f);
-		drawOneBlade();
-		glPopMatrix();
+		return false;
 	}
-
-	// hub
-	glColor3f(0.3f, 0.3f, 0.3f);
-	drawCircle(0.0f, 0.0f, 0.04f);
-
-	glPopMatrix();
 }
 
 //--------------------------------------------------------------------
-
-void display()
+// 2D translate x y
+// 2D rotate z (+ve is CCW, -ve is CW), according to origin NOT shape center
+void display() //Runs every frame according to the CPU
 {
-	// time since last frame, so the speed is the same on any computer
-	LARGE_INTEGER now;
-	QueryPerformanceCounter(&now);
-	float dt = (float)(now.QuadPart - lastTime.QuadPart) / freq.QuadPart;
-	lastTime = now;
-
-	bladeAngle += direction * speed * dt;
-	if (bladeAngle > 360.0f) bladeAngle -= 360.0f;
-	if (bladeAngle < -360.0f) bladeAngle += 360.0f;
-
-	glClearColor(0.53f, 0.81f, 0.92f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
-
-	// keep shapes round on an 800x600 window
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glOrtho(-1.333, 1.333, -1.0, 1.0, -1.0, 1.0);
-	glMatrixMode(GL_MODELVIEW);
+	//--------------------------------
+	//	OpenGL drawing
+	//--------------------------------
+	glClearColor(0.08f, 0.08f, 0.10f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glLoadIdentity();
 
-	drawBackground();
-	drawTower();
-	drawBlades();
-}
-//--------------------------------------------------------------------
+	angle = angle + 0.3f;
+	glRotatef(angle, 0.0f, 1.0f, 0.0f); //spin about the y aixs
 
+	glColor3f(1.0f, 0.8f, 0.2f);
+
+	//2e
+	if (lineStyle)	gluQuadricDrawStyle(var, GLU_LINE);
+	else			gluQuadricDrawStyle(var, GLU_FILL);
+
+	//2c
+	//gluSphere(var, 0.7 slices,stacks);
+	gluCylinder(var, 0.3, topSteps * 0.05 , 1.0 , 20 ,5);
+
+	//--------------------------------
+	//	End of OpenGL drawing
+	//--------------------------------
+}
+
+//--------------------------------------------------------------------
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, int nCmdShow)
 {
 	WNDCLASSEX wc;
@@ -252,7 +125,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, int nCmdShow)
 	if (!RegisterClassEx(&wc)) return false;
 
 	HWND hWnd = CreateWindow(WINDOW_TITLE, WINDOW_TITLE, WS_OVERLAPPEDWINDOW,
-		CW_USEDEFAULT, CW_USEDEFAULT, 800, 600,
+		CW_USEDEFAULT, CW_USEDEFAULT, 600, 600,
 		NULL, NULL, wc.hInstance, NULL);
 
 	//--------------------------------
@@ -260,24 +133,32 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, int nCmdShow)
 	//--------------------------------
 
 	HDC hdc = GetDC(hWnd);
+
+	//	initialize pixel format for the window
 	initPixelFormat(hdc);
+
+	//	get an openGL context
 	HGLRC hglrc = wglCreateContext(hdc);
+
+	//	make context current
 	if (!wglMakeCurrent(hdc, hglrc)) return false;
 
 	//--------------------------------
 	//	End initialization
 	//--------------------------------
 
-	ShowWindow(hWnd, nCmdShow);
+	// The projection
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glOrtho(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
+	glMatrixMode(GL_MODELVIEW);
 
-	QueryPerformanceFrequency(&freq);
-	QueryPerformanceCounter(&lastTime);
+	var = gluNewQuadric(); //Create the quadric object ONCE!!!
+
+	ShowWindow(hWnd, nCmdShow);
 
 	MSG msg;
 	ZeroMemory(&msg, sizeof(msg));
-
-	char title[128];
-	DWORD lastTitleUpdate = 0;
 
 	while (true)
 	{
@@ -290,16 +171,8 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, int nCmdShow)
 		}
 
 		display();
-		SwapBuffers(hdc);
 
-		// show the current state in the title bar
-		if (GetTickCount() - lastTitleUpdate > 100)
-		{
-			sprintf_s(title, "Windmill  |  %s  |  speed: %.0f deg/s   (A/D direction, W/S speed, Space stop)",
-				speed == 0.0f ? "STOPPED" : (direction < 0 ? "CLOCKWISE" : "ANTI-CLOCKWISE"), speed);
-			SetWindowTextA(hWnd, title);
-			lastTitleUpdate = GetTickCount();
-		}
+		SwapBuffers(hdc);
 	}
 
 	UnregisterClass(WINDOW_TITLE, wc.hInstance);
