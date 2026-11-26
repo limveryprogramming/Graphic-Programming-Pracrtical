@@ -11,6 +11,8 @@
 //Create a quadric object
 GLUquadricObj* var = NULL;
 float objZ = 0.0f;//practical5  //how far the object is along z(negative = farther away
+double fovy = 60.0;			// field of view (degrees) for perspective
+bool useFrustum = false;	// F key: glFrustum vs gluPerspective
 
 
 LRESULT WINAPI WindowProcedure(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -25,6 +27,26 @@ LRESULT WINAPI WindowProcedure(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam
 		if (wParam == VK_ESCAPE) PostQuitMessage(0);
 		if (wParam == VK_UP) objZ = objZ - 1.0f;    //farther away
 		if (wParam == VK_DOWN) objZ = objZ + 1.0f;  //nearer
+		if (wParam == VK_LEFT && fovy > 20.0) fovy = fovy - 10.0;
+		if (wParam == VK_RIGHT && fovy < 120.0) fovy = fovy + 10.0;
+		if (wParam == 'F') useFrustum = !useFrustum;
+
+		if (wParam == VK_LEFT || wParam == VK_RIGHT || wParam == 'F')	// the projection changed
+		{
+			glMatrixMode(GL_PROJECTION);								// sheet 2a
+			glLoadIdentity();
+			if (useFrustum)
+			{
+				double top = 1.0 * tan(fovy / 2.0 * 3.14159265358979 / 180.0);	// near x tan(fovy/2)
+				double right = top * 1.0;										// top x aspect
+				glFrustum(-right, right, -top, top, 1.0, 20.0);				// sheet 2c
+			}
+			else
+			{
+				gluPerspective(fovy, 1.0, 1.0, 20.0);							// sheet 2b
+			}
+			glMatrixMode(GL_MODELVIEW);
+		}
 
 		if (wParam >= '1' && wParam <= '4')  //test different viewing volumes
 		{
@@ -170,7 +192,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, int nCmdShow)
 	// The projection
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glOrtho(-1.0f, 1.0f, -1.0f, 1.0f, -10.0f, 10.0f);
+	gluPerspective(60.0,1.0,1.0,20.0);
 	glMatrixMode(GL_MODELVIEW);
 
 	glEnable(GL_DEPTH_TEST);
