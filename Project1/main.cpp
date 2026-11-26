@@ -10,11 +10,8 @@
 
 //Create a quadric object
 GLUquadricObj* var = NULL;
+float objZ = 0.0f;//practical5  //how far the object is along z(negative = farther away
 
-//Global variable
-bool lineStyle = false;
-int slices = 20, stacks = 20;
-float angle = 0.0f;
 
 LRESULT WINAPI WindowProcedure(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -26,9 +23,19 @@ LRESULT WINAPI WindowProcedure(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam
 
 	case WM_KEYDOWN:
 		if (wParam == VK_ESCAPE) PostQuitMessage(0);
-		else if (wParam == 'L') lineStyle = !lineStyle;
-		else if (wParam == VK_UP && slices < 60) { slices = slices + 2; stacks = stacks + 2; }
-		else if (wParam == VK_DOWN && slices > 4) { slices = slices - 2; stacks = stacks - 2; }
+		if (wParam == VK_UP) objZ = objZ - 1.0f;    //farther away
+		if (wParam == VK_DOWN) objZ = objZ + 1.0f;  //nearer
+
+		if (wParam >= '1' && wParam <= '4')  //test different viewing volumes
+		{
+			glMatrixMode(GL_PROJECTION);
+			glLoadIdentity();
+			if (wParam == '1') glOrtho(-1.0, 1.0, -1.0, 1.0, -10.0, 10.0);
+			if (wParam == '2') glOrtho(-2.0, 2.0, -2.0, 2.0, -10.0, 10.0);
+			if (wParam == '3') glOrtho(-1.0, 1.0, -2.0, 2.0, -10.0, 10.0);
+			if (wParam == '4') glOrtho(-0.5, 1.5, -1.0, 1.0, -10.0, 10.0);
+			glMatrixMode(GL_MODELVIEW);
+		}
 		break;
 
 	default:
@@ -81,55 +88,46 @@ bool initPixelFormat(HDC hdc)
 // 2D rotate z (+ve is CCW, -ve is CW), according to origin NOT shape center
 void display() //Runs every frame according to the CPU
 {
-	//--------------------------------
-	//	OpenGL drawing
-	//--------------------------------
 	glClearColor(0.08f, 0.08f, 0.10f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glLoadIdentity();
 
-	glEnable(GL_DEPTH_TEST);
-
-	glRotatef(15.0f, 1.0f, 0.0f, 0.0f); //tilt a bit so we can see the top
+	static float angle = 0.0f;
 	angle = angle + 0.3f;
-	glRotatef(angle, 0.0f, 1.0f, 0.0f); //spin about the y aixs
 
-	//2e
-	if (lineStyle)	gluQuadricDrawStyle(var, GLU_LINE);
-	else			gluQuadricDrawStyle(var, GLU_FILL);
+	glTranslatef(0.0f, 0.0f, objZ);			// UP / DOWN key moves it along z
+	glRotatef(15.0f, 1.0f, 0.0f, 0.0f);		// tilt a bit so we can see the top
+	glRotatef(angle, 0.0f, 1.0f, 0.0f);		// spin about the y axis
+
+	gluQuadricDrawStyle(var, GLU_FILL);
 
 	//---------------- Cone (point facing down) ----------------
 	glPushMatrix();
 	glColor3f(0.85f, 0.6f, 0.3f);			// waffle colour
-	glTranslatef(0.0f, 0.0f, 0.0f);
 	glRotatef(90.0f, 1.0f, 0.0f, 0.0f);		// cylinder z-axis -> -y
-	gluCylinder(var, 0.3, 0.0, 0.9, slices, stacks);
+	gluCylinder(var, 0.3, 0.0, 0.9, 20, 20);
 	glPopMatrix();
 
 	//---------------- Scoop 1 : strawberry (bottom left) ----------------
 	glPushMatrix();
 	glColor3f(1.0f, 0.55f, 0.7f);
 	glTranslatef(-0.14f, 0.1f, 0.0f);
-	gluSphere(var, 0.22, slices, stacks);
+	gluSphere(var, 0.22, 20, 20);
 	glPopMatrix();
 
 	//---------------- Scoop 2 : vanilla (bottom right) ----------------
 	glPushMatrix();
 	glColor3f(1.0f, 0.95f, 0.75f);
 	glTranslatef(0.14f, 0.1f, 0.0f);
-	gluSphere(var, 0.22, slices, stacks);
+	gluSphere(var, 0.22, 20, 20);
 	glPopMatrix();
 
 	//---------------- Scoop 3 : chocolate (top) ----------------
 	glPushMatrix();
 	glColor3f(0.45f, 0.25f, 0.12f);
 	glTranslatef(0.0f, 0.4f, 0.0f);
-	gluSphere(var, 0.22, slices, stacks);
+	gluSphere(var, 0.22, 20, 20);
 	glPopMatrix();
-
-	//--------------------------------
-	//	End of OpenGL drawing
-	//--------------------------------
 }
 
 //--------------------------------------------------------------------
@@ -145,9 +143,9 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, int nCmdShow)
 	wc.style = CS_HREDRAW | CS_VREDRAW;
 
 	if (!RegisterClassEx(&wc)) return false;
-
+	RECT rc = { 0,0,640,640 };
 	HWND hWnd = CreateWindow(WINDOW_TITLE, WINDOW_TITLE, WS_OVERLAPPEDWINDOW,
-		CW_USEDEFAULT, CW_USEDEFAULT, 600, 600,
+		CW_USEDEFAULT, CW_USEDEFAULT, rc.right - rc.left, rc.bottom - rc.top,
 		NULL, NULL, wc.hInstance, NULL);
 
 	//--------------------------------
@@ -172,9 +170,10 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, int nCmdShow)
 	// The projection
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glOrtho(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
+	glOrtho(-1.0f, 1.0f, -1.0f, 1.0f, -10.0f, 10.0f);
 	glMatrixMode(GL_MODELVIEW);
 
+	glEnable(GL_DEPTH_TEST);
 	var = gluNewQuadric(); //Create the quadric object ONCE!!!
 
 	ShowWindow(hWnd, nCmdShow);
