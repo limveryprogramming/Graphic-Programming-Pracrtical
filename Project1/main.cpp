@@ -16,8 +16,6 @@ bool lineStyle = false;
 int slices = 20, stacks = 20;
 float angle = 0.0f;
 
-int topSteps = 6;
-
 LRESULT WINAPI WindowProcedure(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg)
@@ -29,10 +27,8 @@ LRESULT WINAPI WindowProcedure(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam
 	case WM_KEYDOWN:
 		if (wParam == VK_ESCAPE) PostQuitMessage(0);
 		else if (wParam == 'L') lineStyle = !lineStyle;
-		//else if (wParam == VK_UP) if (slices < 60) { slices = slices + 2; stacks = stacks + 2; }
-		//else if (wParam == VK_DOWN) if (slices > 4) { slices = slices - 2; stacks = stacks - 2; }
-		else if (wParam == VK_UP && topSteps < 11) { topSteps = topSteps + 1; }
-		else if (wParam == VK_DOWN && topSteps > 0) { topSteps = topSteps - 1; }
+		else if (wParam == VK_UP && slices < 60) { slices = slices + 2; stacks = stacks + 2; }
+		else if (wParam == VK_DOWN && slices > 4) { slices = slices - 2; stacks = stacks - 2; }
 		break;
 
 	default:
@@ -92,18 +88,44 @@ void display() //Runs every frame according to the CPU
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glLoadIdentity();
 
+	glEnable(GL_DEPTH_TEST);
+
+	glRotatef(15.0f, 1.0f, 0.0f, 0.0f); //tilt a bit so we can see the top
 	angle = angle + 0.3f;
 	glRotatef(angle, 0.0f, 1.0f, 0.0f); //spin about the y aixs
-
-	glColor3f(1.0f, 0.8f, 0.2f);
 
 	//2e
 	if (lineStyle)	gluQuadricDrawStyle(var, GLU_LINE);
 	else			gluQuadricDrawStyle(var, GLU_FILL);
 
-	//2c
-	//gluSphere(var, 0.7 slices,stacks);
-	gluCylinder(var, 0.3, topSteps * 0.05 , 1.0 , 20 ,5);
+	//---------------- Cone (point facing down) ----------------
+	glPushMatrix();
+	glColor3f(0.85f, 0.6f, 0.3f);			// waffle colour
+	glTranslatef(0.0f, 0.0f, 0.0f);
+	glRotatef(90.0f, 1.0f, 0.0f, 0.0f);		// cylinder z-axis -> -y
+	gluCylinder(var, 0.3, 0.0, 0.9, slices, stacks);
+	glPopMatrix();
+
+	//---------------- Scoop 1 : strawberry (bottom left) ----------------
+	glPushMatrix();
+	glColor3f(1.0f, 0.55f, 0.7f);
+	glTranslatef(-0.14f, 0.1f, 0.0f);
+	gluSphere(var, 0.22, slices, stacks);
+	glPopMatrix();
+
+	//---------------- Scoop 2 : vanilla (bottom right) ----------------
+	glPushMatrix();
+	glColor3f(1.0f, 0.95f, 0.75f);
+	glTranslatef(0.14f, 0.1f, 0.0f);
+	gluSphere(var, 0.22, slices, stacks);
+	glPopMatrix();
+
+	//---------------- Scoop 3 : chocolate (top) ----------------
+	glPushMatrix();
+	glColor3f(0.45f, 0.25f, 0.12f);
+	glTranslatef(0.0f, 0.4f, 0.0f);
+	gluSphere(var, 0.22, slices, stacks);
+	glPopMatrix();
 
 	//--------------------------------
 	//	End of OpenGL drawing
