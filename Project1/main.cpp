@@ -1,19 +1,26 @@
 #include <Windows.h>
-#include <math.h>
 #include <gl/GL.h>
 #include <gl/GLU.h>
 
 #pragma comment (lib, "OpenGL32.lib") //Get the OpenGL library
 #pragma comment (lib, "GLU32.lib") // link GLU32.lib
 
-#define WINDOW_TITLE "OpenGL Window"
+#define WINDOW_TITLE "Practical 6 lighting and material"
 
-//Create a quadric object
-GLUquadricObj* var = NULL;
-float objZ = 0.0f;//practical5  //how far the object is along z(negative = farther away
-double fovy = 60.0;			// field of view (degrees) for perspective
-bool useFrustum = false;	// F key: glFrustum vs gluPerspective
+GLUquadricObj* var = NULL;  //the quadric object (practical 4B)
+bool light0On = true;       //L switches this
+bool lightingOn = true;     //G switches this
+int material = 0;           //M cycles this: 0 white, 1 green, 2 red, 3 yellow
 
+GLfloat lightAmbient[] = { 0.2f, 0.2f, 0.2f, 1.0f };   //i.   a little white ambient light
+GLfloat lightDiffuse[] = { 1.0f, 0.0f, 0.0f, 1.0f };   //ii.  RED diffuse light
+GLfloat lightPosition[] = { 1.0f, 1.0f, 1.0f, 0.0f };  //iii. x,y,z,w (w = 0: directional light, rays come from (1,1,1))
+
+//the 4 materials M cycles through
+GLfloat white[] = { 1.0f, 1.0f, 1.0f, 1.0f };   //0
+GLfloat green[] = { 0.0f, 1.0f, 0.0f, 1.0f };   //1
+GLfloat red[] = { 1.0f, 0.0f, 0.0f, 1.0f };     //2
+GLfloat yellow[] = { 1.0f, 1.0f, 0.0f, 1.0f };  //3
 
 LRESULT WINAPI WindowProcedure(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -25,39 +32,9 @@ LRESULT WINAPI WindowProcedure(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam
 
 	case WM_KEYDOWN:
 		if (wParam == VK_ESCAPE) PostQuitMessage(0);
-		if (wParam == VK_UP) objZ = objZ - 1.0f;    //farther away
-		if (wParam == VK_DOWN) objZ = objZ + 1.0f;  //nearer
-		if (wParam == VK_LEFT && fovy > 20.0) fovy = fovy - 10.0;
-		if (wParam == VK_RIGHT && fovy < 120.0) fovy = fovy + 10.0;
-		if (wParam == 'F') useFrustum = !useFrustum;
-
-		if (wParam == VK_LEFT || wParam == VK_RIGHT || wParam == 'F')	// the projection changed
-		{
-			glMatrixMode(GL_PROJECTION);								// sheet 2a
-			glLoadIdentity();
-			if (useFrustum)
-			{
-				double top = 1.0 * tan(fovy / 2.0 * 3.14159265358979 / 180.0);	// near x tan(fovy/2)
-				double right = top * 1.0;										// top x aspect
-				glFrustum(-right, right, -top, top, 1.0, 20.0);				// sheet 2c
-			}
-			else
-			{
-				gluPerspective(fovy, 1.0, 1.0, 20.0);							// sheet 2b
-			}
-			glMatrixMode(GL_MODELVIEW);
-		}
-
-		if (wParam >= '1' && wParam <= '4')  //test different viewing volumes
-		{
-			glMatrixMode(GL_PROJECTION);
-			glLoadIdentity();
-			if (wParam == '1') glOrtho(-1.0, 1.0, -1.0, 1.0, -10.0, 10.0);
-			if (wParam == '2') glOrtho(-2.0, 2.0, -2.0, 2.0, -10.0, 10.0);
-			if (wParam == '3') glOrtho(-1.0, 1.0, -2.0, 2.0, -10.0, 10.0);
-			if (wParam == '4') glOrtho(-0.5, 1.5, -1.0, 1.0, -10.0, 10.0);
-			glMatrixMode(GL_MODELVIEW);
-		}
+		if (wParam == 'L') light0On = !light0On;
+		if (wParam == 'G') lightingOn = !lightingOn;
+		if (wParam == 'M') material = (material + 1) % 4;
 		break;
 
 	default:
@@ -106,50 +83,35 @@ bool initPixelFormat(HDC hdc)
 }
 
 //--------------------------------------------------------------------
-// 2D translate x y
-// 2D rotate z (+ve is CCW, -ve is CW), according to origin NOT shape center
 void display() //Runs every frame according to the CPU
 {
 	glClearColor(0.08f, 0.08f, 0.10f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glLoadIdentity();
 
-	static float angle = 0.0f;
-	angle = angle + 0.3f;
+	//sheet 1b: the properties of light 0 (set while the modelview matrix is the identity)
+	glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmbient);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDiffuse);
+	glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
 
-	glTranslatef(0.0f, 0.0f, objZ);			// UP / DOWN key moves it along z
-	glRotatef(15.0f, 1.0f, 0.0f, 0.0f);		// tilt a bit so we can see the top
-	glRotatef(angle, 0.0f, 1.0f, 0.0f);		// spin about the y axis
+	//sheet 1c, 1e: switch light 0 on or off (L key)
+	if (light0On) glEnable(GL_LIGHT0);
+	else          glDisable(GL_LIGHT0);
 
-	gluQuadricDrawStyle(var, GLU_FILL);
+	//sheet 1d: switch the whole lighting system on or off (G key)
+	if (lightingOn) glEnable(GL_LIGHTING);
+	else            glDisable(GL_LIGHTING);
 
-	//---------------- Cone (point facing down) ----------------
-	glPushMatrix();
-	glColor3f(0.85f, 0.6f, 0.3f);			// waffle colour
-	glRotatef(90.0f, 1.0f, 0.0f, 0.0f);		// cylinder z-axis -> -y
-	gluCylinder(var, 0.3, 0.0, 0.9, 20, 20);
-	glPopMatrix();
+	// sheet 2b: the material of the objects drawn after these lines (M key)
+	GLfloat* colour = white;
+	if (material == 1) colour = green;
+	if (material == 2) colour = red;
+	if (material == 3) colour = yellow;
+	glMaterialfv(GL_FRONT, GL_AMBIENT, colour);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, colour);
 
-	//---------------- Scoop 1 : strawberry (bottom left) ----------------
-	glPushMatrix();
-	glColor3f(1.0f, 0.55f, 0.7f);
-	glTranslatef(-0.14f, 0.1f, 0.0f);
-	gluSphere(var, 0.22, 20, 20);
-	glPopMatrix();
-
-	//---------------- Scoop 2 : vanilla (bottom right) ----------------
-	glPushMatrix();
-	glColor3f(1.0f, 0.95f, 0.75f);
-	glTranslatef(0.14f, 0.1f, 0.0f);
-	gluSphere(var, 0.22, 20, 20);
-	glPopMatrix();
-
-	//---------------- Scoop 3 : chocolate (top) ----------------
-	glPushMatrix();
-	glColor3f(0.45f, 0.25f, 0.12f);
-	glTranslatef(0.0f, 0.4f, 0.0f);
-	gluSphere(var, 0.22, 20, 20);
-	glPopMatrix();
+	glColor3f(0.7f, 0.7f, 0.7f);		// used only when lighting is off
+	gluSphere(var, 0.7, 40, 40);
 }
 
 //--------------------------------------------------------------------
@@ -192,7 +154,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, int nCmdShow)
 	// The projection
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(60.0,1.0,1.0,20.0);
+	glOrtho(-1.0, 1.0, -1.0, 1.0, -1.0, 1.0);
 	glMatrixMode(GL_MODELVIEW);
 
 	glEnable(GL_DEPTH_TEST);
@@ -218,6 +180,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, int nCmdShow)
 		SwapBuffers(hdc);
 	}
 
+	gluDeleteQuadric(var);
 	UnregisterClass(WINDOW_TITLE, wc.hInstance);
 
 	return true;
